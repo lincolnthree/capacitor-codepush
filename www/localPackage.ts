@@ -370,7 +370,9 @@ export class LocalPackage extends Package implements ILocalPackage {
 
         newPackageLocation = currentPackagePath ? newPackageLocation : newPackageLocation + "/www";
 
-        const source: GetUriOptions = currentPackagePath ? {directory: FilesystemDirectory.Data, path: currentPackagePath} : {directory: FilesystemDirectory.Application, path: "www"};
+        // TODO: Investigate if this works as expected on iOS due to:
+        // https://github.com/ionic-team/capacitor/issues/2312
+        const source: GetUriOptions = {directory: FilesystemDirectory.Data, path: currentPackagePath || "www"};
         const target: GetUriOptions = {directory: FilesystemDirectory.Data, path: newPackageLocation};
 
         return FileUtil.copyDirectoryEntriesTo(source, target, ignoreList);
