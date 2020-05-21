@@ -42,7 +42,9 @@ export interface IRemotePackage extends IPackage {
      * @param downloadProgress Optional callback invoked during the download process. It is called several times with one DownloadProgress parameter.
      * @returns the downloaded package information, once the download completed successfully.
      */
-    download(downloadProgress?: SuccessCallback<DownloadProgress>): Promise<ILocalPackage>;
+    download(
+        downloadProgress?: SuccessCallback<DownloadProgress>
+    ): Promise<ILocalPackage>;
 
     /**
      * Aborts the current download session, previously started with download().

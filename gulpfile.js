@@ -14,7 +14,8 @@ var emulatorReadyCheckDelay = 30 * 1000;
 var emulatorMaxReadyAttempts = 5;
 
 /* This message is appended to the compiled JS files to avoid contributions to the compiled sources.*/
-var compiledSourceWarningMessage = "\n \
+var compiledSourceWarningMessage =
+    "\n \
 /******************************************************************************************** \n \
 	 THIS FILE HAS BEEN COMPILED FROM TYPESCRIPT SOURCES. \n \
 	 PLEASE DO NOT MODIFY THIS FILE DIRECTLY AS YOU WILL LOSE YOUR CHANGES WHEN RECOMPILING. \n \
@@ -24,13 +25,13 @@ var compiledSourceWarningMessage = "\n \
 
 /* TypeScript compilation parameters */
 var tsCompileOptions = {
-    "alwaysStrict": true,
-    "noImplicitAny": true,
-    "noEmitOnError": true,
-    "target": "ES2017",
-    "module": "commonjs",
-    "sourceMap": false,
-    "removeComments": true
+    alwaysStrict: true,
+    noImplicitAny: true,
+    noEmitOnError: true,
+    target: "ES2017",
+    module: "commonjs",
+    sourceMap: false,
+    removeComments: true,
 };
 
 function spawnCommand(command, args, callback, silent, detached) {
@@ -42,44 +43,45 @@ function spawnCommand(command, args, callback, silent, detached) {
 
     var process = child_process.spawn(command, args, options);
 
-    process.stdout.on('data', function (data) {
+    process.stdout.on("data", function (data) {
         if (!silent) console.log("" + data);
     });
 
-    process.stderr.on('data', function (data) {
+    process.stderr.on("data", function (data) {
         if (!silent) console.error("" + data);
     });
 
     if (!detached) {
-        process.on('exit', function (code) {
-            callback && callback(code === 0 ? undefined : "Error code: " + code);
+        process.on("exit", function (code) {
+            callback &&
+                callback(code === 0 ? undefined : "Error code: " + code);
         });
     }
 
     return process;
-};
+}
 
 function execCommand(command, args, callback, silent) {
     var process = child_process.exec(command + " " + args.join(" "));
 
-    process.stdout.on('data', function (data) {
+    process.stdout.on("data", function (data) {
         if (!silent) console.log("" + data);
     });
 
-    process.stderr.on('data', function (data) {
+    process.stderr.on("data", function (data) {
         if (!silent) console.error("" + data);
     });
 
-    process.on('error', function (error) {
+    process.on("error", function (error) {
         callback && callback(error);
-    })
+    });
 
-    process.on('exit', function (code) {
+    process.on("exit", function (code) {
         callback && callback(code === 0 ? undefined : "Error code: " + code);
     });
 
     return process;
-};
+}
 
 /**
  * Executes a child process and returns its output in the promise as a string
@@ -94,7 +96,6 @@ function execCommandWithPromise(command, options, logOutput) {
 
     console.log("Running command: " + command);
     child_process.exec(command, options, (error, stdout, stderr) => {
-
         if (logOutput) stdout && console.log(stdout);
         stderr && console.error(stderr);
 
@@ -121,7 +122,11 @@ function runTests(callback, options) {
     args.push("--reporter-options");
     var filename = "./test-results.xml";
     if (options.android && !options.ios) filename = "./test-android.xml";
-    else if (options.ios && !options.android) filename = "./test-ios" + (options.wk ? (options.ui ? "" : "-wk") : "-ui") + ".xml";
+    else if (options.ios && !options.android)
+        filename =
+            "./test-ios" +
+            (options.wk ? (options.ui ? "" : "-wk") : "-ui") +
+            ".xml";
     args.push("mochaFile=" + filename);
     // Delete previous test result file so TFS doesn't read the old file if the tests exit before saving
     del(filename);
@@ -148,7 +153,8 @@ gulp.task("compile-test", function () {
     var ts = require("gulp-typescript");
     var insert = require("gulp-insert");
 
-    return gulp.src([testPath + tsFiles])
+    return gulp
+        .src([testPath + tsFiles])
         .pipe(ts(tsCompileOptions))
         .pipe(insert.prepend(compiledSourceWarningMessage))
         .pipe(gulp.dest(path.join(binPath, testPath)));
@@ -158,7 +164,8 @@ gulp.task("compile-src", function () {
     var ts = require("gulp-typescript");
     var insert = require("gulp-insert");
 
-    return gulp.src([sourcePath + tsFiles])
+    return gulp
+        .src([sourcePath + tsFiles])
         .pipe(ts(tsCompileOptions))
         .pipe(insert.prepend(compiledSourceWarningMessage))
         .pipe(gulp.dest(path.join(binPath, sourcePath)));
@@ -167,12 +174,13 @@ gulp.task("compile-src", function () {
 gulp.task("compile", gulp.series("compile-src", "compile-test"));
 
 gulp.task("tslint", function () {
-    var tslint = require('gulp-tslint');
+    var tslint = require("gulp-tslint");
 
     // Configuration options adapted from TypeScript project:
     // https://github.com/Microsoft/TypeScript/blob/master/tslint.json
 
-    return gulp.src([sourcePath + tsFiles, testPath + tsFiles])
+    return gulp
+        .src([sourcePath + tsFiles, testPath + tsFiles])
         .pipe(tslint({ configuration: "./tslint.json", formatter: "verbose" }))
         .pipe(tslint.report());
 });
@@ -195,7 +203,7 @@ gulp.task("default", gulp.series("clean", "compile", "tslint"));
 // Run on Android standalone
 gulp.task("test-run-android", function (callback) {
     var options = {
-        android: true
+        android: true,
     };
 
     runTests(callback, options);
@@ -231,7 +239,7 @@ gulp.task("test-run-ios-wk", function (callback) {
 gulp.task("test-setup-android", function (callback) {
     var options = {
         setup: true,
-        android: true
+        android: true,
     };
 
     runTests(callback, options);
@@ -241,7 +249,7 @@ gulp.task("test-setup-android", function (callback) {
 gulp.task("test-setup-ios", function (callback) {
     var options = {
         setup: true,
-        ios: true
+        ios: true,
     };
 
     runTests(callback, options);
@@ -252,14 +260,17 @@ gulp.task("test-setup-both", function (callback) {
     var options = {
         setup: true,
         android: true,
-        ios: true
+        ios: true,
     };
 
     runTests(callback, options);
 });
 
 // Builds, sets up test projects, and starts the Android emulator
-gulp.task("test-setup-build-android", gulp.series("default", "test-setup-android"));
+gulp.task(
+    "test-setup-build-android",
+    gulp.series("default", "test-setup-android")
+);
 
 // Builds, sets up test projects, and starts the iOS emulator
 gulp.task("test-setup-build-ios", gulp.series("default", "test-setup-ios"));
@@ -273,7 +284,10 @@ gulp.task("test-setup-build-both", gulp.series("default", "test-setup-both"));
 // Runs tests but doesn't build or start emulators.
 
 // Run on Android fast
-gulp.task("test-android-fast", gulp.series("test-setup-android", "test-run-android"));
+gulp.task(
+    "test-android-fast",
+    gulp.series("test-setup-android", "test-run-android")
+);
 
 // Run on iOS with the UiWebView fast
 gulp.task("test-ios-ui-fast", gulp.series("test-setup-ios", "test-run-ios-ui"));
@@ -287,16 +301,33 @@ gulp.task("test-ios-wk-fast", gulp.series("test-setup-ios", "test-run-ios-wk"));
 // Run tests but doesn't build or start emulators.
 
 // Run on iOS with the UiWebView fast
-gulp.task("test-android-ios-ui-fast", gulp.series("test-setup-both", "test-run-android", "test-run-ios-ui"));
+gulp.task(
+    "test-android-ios-ui-fast",
+    gulp.series("test-setup-both", "test-run-android", "test-run-ios-ui")
+);
 
 // Run on iOS with the WkWebView fast
-gulp.task("test-android-ios-wk-fast", gulp.series("test-setup-both", "test-run-android", "test-run-ios-wk"));
+gulp.task(
+    "test-android-ios-wk-fast",
+    gulp.series("test-setup-both", "test-run-android", "test-run-ios-wk")
+);
 
 // Run on iOS with both WebViews fast
-gulp.task("test-ios-fast", gulp.series("test-setup-ios", "test-run-ios-ui", "test-run-ios-wk"));
+gulp.task(
+    "test-ios-fast",
+    gulp.series("test-setup-ios", "test-run-ios-ui", "test-run-ios-wk")
+);
 
 // Run on iOS with the WkWebView fast
-gulp.task("test-fast", gulp.series("test-setup-both", "test-run-android", "test-run-ios-ui", "test-run-ios-wk"));
+gulp.task(
+    "test-fast",
+    gulp.series(
+        "test-setup-both",
+        "test-run-android",
+        "test-run-ios-ui",
+        "test-run-ios-wk"
+    )
+);
 
 ////////////////////////////////////////////////////////////////////////
 // Test Tasks
@@ -304,13 +335,22 @@ gulp.task("test-fast", gulp.series("test-setup-both", "test-run-android", "test-
 // Run tests, build, and start emulators.
 
 // Run on Android
-gulp.task("test-android", gulp.series("test-setup-build-android", "test-run-android"));
+gulp.task(
+    "test-android",
+    gulp.series("test-setup-build-android", "test-run-android")
+);
 
 // Run on iOS with the UiWebView
-gulp.task("test-ios-ui", gulp.series("test-setup-build-ios", "test-run-ios-ui"));
+gulp.task(
+    "test-ios-ui",
+    gulp.series("test-setup-build-ios", "test-run-ios-ui")
+);
 
 // Run on iOS with the WkWebView
-gulp.task("test-ios-wk", gulp.series("test-setup-build-ios", "test-run-ios-wk"));
+gulp.task(
+    "test-ios-wk",
+    gulp.series("test-setup-build-ios", "test-run-ios-wk")
+);
 
 ////////////////////////////////////////////////////////////////////////
 // Composition Test Tasks
@@ -318,13 +358,30 @@ gulp.task("test-ios-wk", gulp.series("test-setup-build-ios", "test-run-ios-wk"))
 // Run tests, build, and start emulators.
 
 // Run on Android and iOS with UiWebViews
-gulp.task("test-android-ios-ui", gulp.series("test-setup-build-both", "test-run-android", "test-run-ios-ui"));
+gulp.task(
+    "test-android-ios-ui",
+    gulp.series("test-setup-build-both", "test-run-android", "test-run-ios-ui")
+);
 
 // Run on Android and iOS with WkWebViews
-gulp.task("test-android-ios-wk", gulp.series("test-setup-build-both", "test-run-android", "test-run-ios-wk"));
+gulp.task(
+    "test-android-ios-wk",
+    gulp.series("test-setup-build-both", "test-run-android", "test-run-ios-wk")
+);
 
 // Run on iOS with both WebViews
-gulp.task("test-ios", gulp.series("test-setup-build-ios", "test-run-ios-ui", "test-run-ios-wk"));
+gulp.task(
+    "test-ios",
+    gulp.series("test-setup-build-ios", "test-run-ios-ui", "test-run-ios-wk")
+);
 
 // Run on Android and iOS with both WebViews
-gulp.task("test", gulp.series("test-setup-build-both", "test-run-android", "test-run-ios-ui", "test-run-ios-wk"));
+gulp.task(
+    "test",
+    gulp.series(
+        "test-setup-build-both",
+        "test-run-android",
+        "test-run-ios-ui",
+        "test-run-ios-wk"
+    )
+);

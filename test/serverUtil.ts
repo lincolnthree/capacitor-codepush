@@ -38,7 +38,8 @@ export class TestMessage {
     public static UPDATE_FAILED_PREVIOUSLY = "UPDATE_FAILED_PREVIOUSLY";
     public static NOTIFY_APP_READY_SUCCESS = "NOTIFY_APP_READY_SUCCESS";
     public static NOTIFY_APP_READY_FAILURE = "NOTIFY_APP_READY_FAILURE";
-    public static SKIPPED_NOTIFY_APPLICATION_READY = "SKIPPED_NOTIFY_APPLICATION_READY";
+    public static SKIPPED_NOTIFY_APPLICATION_READY =
+        "SKIPPED_NOTIFY_APPLICATION_READY";
     public static SYNC_STATUS = "SYNC_STATUS";
     public static RESTART_SUCCEEDED = "RESTART_SUCCEEDED";
     public static RESTART_FAILED = "RESTART_FAILED";
@@ -60,7 +61,8 @@ export class TestMessage {
  * Contains all the messages sent from the mock server back to the application during tests.
  */
 export class TestMessageResponse {
-    public static SKIP_NOTIFY_APPLICATION_READY = "SKIP_NOTIFY_APPLICATION_READY";
+    public static SKIP_NOTIFY_APPLICATION_READY =
+        "SKIP_NOTIFY_APPLICATION_READY";
 }
 
 /**
@@ -93,7 +95,7 @@ export function areEqual(m1: AppMessage, m2: AppMessage): boolean {
     if (!m1 || !m2 || m1.message !== m2.message) {
         return false;
     }
-    
+
     /* compare arguments */
     if (m1.args === m2.args) {
         return true;

@@ -1,12 +1,20 @@
 import { Plugins } from "@capacitor/core";
-import { AcquisitionStatus, NativeUpdateNotification } from "code-push/script/acquisition-sdk";
+import {
+    AcquisitionStatus,
+    NativeUpdateNotification,
+} from "code-push/script/acquisition-sdk";
 import { Callback, ErrorCallback, SuccessCallback } from "./callbackUtil";
 import { CodePushUtil } from "./codePushUtil";
 import InstallMode from "./installMode";
 import { LocalPackage } from "./localPackage";
 import { NativeAppInfo } from "./nativeAppInfo";
 import { NativeCodePushPlugin } from "./nativeCodePushPlugin";
-import { DownloadProgress, ILocalPackage, IPackage, IRemotePackage } from "./package";
+import {
+    DownloadProgress,
+    ILocalPackage,
+    IPackage,
+    IRemotePackage,
+} from "./package";
 import { RemotePackage } from "./remotePackage";
 import { Sdk } from "./sdk";
 import { SyncOptions, UpdateDialogOptions } from "./syncOptions";
@@ -16,10 +24,9 @@ const { Modals } = Plugins;
 const NativeCodePush = Plugins.CodePush as NativeCodePushPlugin;
 
 interface CodePushCapacitorPlugin {
-
     /**
      * Get the current package information.
-     * 
+     *
      * @returns The currently deployed package information.
      */
     getCurrentPackage(): Promise<ILocalPackage>;
@@ -39,7 +46,11 @@ interface CodePushCapacitorPlugin {
      * @param queryError Optional callback invoked in case of an error.
      * @param deploymentKey Optional deployment key that overrides the config.xml setting.
      */
-    checkForUpdate(querySuccess: SuccessCallback<IRemotePackage>, queryError?: ErrorCallback, deploymentKey?: string): void;
+    checkForUpdate(
+        querySuccess: SuccessCallback<IRemotePackage>,
+        queryError?: ErrorCallback,
+        deploymentKey?: string
+    ): void;
 
     /**
      * Notifies the plugin that the update operation succeeded and that the application is ready.
@@ -74,7 +85,10 @@ interface CodePushCapacitorPlugin {
      * @returns The status of the sync operation. The possible statuses are defined by the SyncStatus enum.
      *
      */
-    sync(syncOptions?: SyncOptions, downloadProgress?: SuccessCallback<DownloadProgress>): Promise<SyncStatus>;
+    sync(
+        syncOptions?: SyncOptions,
+        downloadProgress?: SuccessCallback<DownloadProgress>
+    ): Promise<SyncStatus>;
 }
 
 /**
@@ -120,22 +134,39 @@ class CodePush implements CodePushCapacitorPlugin {
      * Reports an application status back to the server.
      * !!! This function is called from the native side, please make changes accordingly. !!!
      */
-    public reportStatus(status: number, label: string, appVersion: string, deploymentKey: string, previousLabelOrAppVersion?: string, previousDeploymentKey?: string) {
-       if (((!label && appVersion === previousLabelOrAppVersion) || label === previousLabelOrAppVersion)
-           && deploymentKey === previousDeploymentKey) {
-           // No-op since the new appVersion and label is exactly the same as the previous
-           // (the app might have been updated via a direct or HockeyApp deployment).
-           return;
-       }
+    public reportStatus(
+        status: number,
+        label: string,
+        appVersion: string,
+        deploymentKey: string,
+        previousLabelOrAppVersion?: string,
+        previousDeploymentKey?: string
+    ) {
+        if (
+            ((!label && appVersion === previousLabelOrAppVersion) ||
+                label === previousLabelOrAppVersion) &&
+            deploymentKey === previousDeploymentKey
+        ) {
+            // No-op since the new appVersion and label is exactly the same as the previous
+            // (the app might have been updated via a direct or HockeyApp deployment).
+            return;
+        }
 
-       var createPackageForReporting = (label: string, appVersion: string): IPackage => {
+        var createPackageForReporting = (
+            label: string,
+            appVersion: string
+        ): IPackage => {
             return {
                 /* The SDK only reports the label and appVersion.
                    The rest of the properties are added for type safety. */
-                label, appVersion, deploymentKey,
-                description: null, isMandatory: false,
-                packageHash: null, packageSize: null,
-                failedInstall: false
+                label,
+                appVersion,
+                deploymentKey,
+                description: null,
+                isMandatory: false,
+                packageHash: null,
+                packageSize: null,
+                failedInstall: false,
             };
         };
 
@@ -146,27 +177,55 @@ class CodePush implements CodePushCapacitorPlugin {
                 appVersion,
                 deploymentKey,
                 previousLabelOrAppVersion,
-                previousDeploymentKey
+                previousDeploymentKey,
             };
 
             if (error) {
-                CodePushUtil.logError(`An error occurred while reporting status: ${JSON.stringify(reportArgs)}`, error);
-                NativeCodePush.reportFailed({statusReport: reportArgs});
+                CodePushUtil.logError(
+                    `An error occurred while reporting status: ${JSON.stringify(
+                        reportArgs
+                    )}`,
+                    error
+                );
+                NativeCodePush.reportFailed({ statusReport: reportArgs });
             } else {
-                CodePushUtil.logMessage(`Reported status: ${JSON.stringify(reportArgs)}`);
-                NativeCodePush.reportSucceeded({statusReport: reportArgs});
+                CodePushUtil.logMessage(
+                    `Reported status: ${JSON.stringify(reportArgs)}`
+                );
+                NativeCodePush.reportSucceeded({ statusReport: reportArgs });
             }
         };
 
         switch (status) {
             case ReportStatus.STORE_VERSION:
-                Sdk.reportStatusDeploy(null, AcquisitionStatus.DeploymentSucceeded, deploymentKey, previousLabelOrAppVersion, previousDeploymentKey, reportDone);
+                Sdk.reportStatusDeploy(
+                    null,
+                    AcquisitionStatus.DeploymentSucceeded,
+                    deploymentKey,
+                    previousLabelOrAppVersion,
+                    previousDeploymentKey,
+                    reportDone
+                );
                 break;
             case ReportStatus.UPDATE_CONFIRMED:
-                Sdk.reportStatusDeploy(createPackageForReporting(label, appVersion), AcquisitionStatus.DeploymentSucceeded, deploymentKey, previousLabelOrAppVersion, previousDeploymentKey, reportDone);
+                Sdk.reportStatusDeploy(
+                    createPackageForReporting(label, appVersion),
+                    AcquisitionStatus.DeploymentSucceeded,
+                    deploymentKey,
+                    previousLabelOrAppVersion,
+                    previousDeploymentKey,
+                    reportDone
+                );
                 break;
             case ReportStatus.UPDATE_ROLLED_BACK:
-                Sdk.reportStatusDeploy(createPackageForReporting(label, appVersion), AcquisitionStatus.DeploymentFailed, deploymentKey, previousLabelOrAppVersion, previousDeploymentKey, reportDone);
+                Sdk.reportStatusDeploy(
+                    createPackageForReporting(label, appVersion),
+                    AcquisitionStatus.DeploymentFailed,
+                    deploymentKey,
+                    previousLabelOrAppVersion,
+                    previousDeploymentKey,
+                    reportDone
+                );
                 break;
         }
     }
@@ -178,9 +237,15 @@ class CodePush implements CodePushCapacitorPlugin {
      */
     public async getCurrentPackage(): Promise<ILocalPackage> {
         const pendingUpdate = await NativeAppInfo.isPendingUpdate();
-        var packageInfoFile = pendingUpdate ? LocalPackage.OldPackageInfoFile : LocalPackage.PackageInfoFile;
+        var packageInfoFile = pendingUpdate
+            ? LocalPackage.OldPackageInfoFile
+            : LocalPackage.PackageInfoFile;
         return new Promise<ILocalPackage>((resolve, reject) => {
-            LocalPackage.getPackageInfoOrNull(packageInfoFile, resolve as any, reject);
+            LocalPackage.getPackageInfoOrNull(
+                packageInfoFile,
+                resolve as any,
+                reject
+            );
         });
     }
 
@@ -193,7 +258,11 @@ class CodePush implements CodePushCapacitorPlugin {
         if (!pendingUpdate) return null;
 
         return new Promise<ILocalPackage>((resolve, reject) => {
-            LocalPackage.getPackageInfoOrNull(LocalPackage.PackageInfoFile, resolve as any, reject);
+            LocalPackage.getPackageInfoOrNull(
+                LocalPackage.PackageInfoFile,
+                resolve as any,
+                reject
+            );
         });
     }
 
@@ -206,27 +275,47 @@ class CodePush implements CodePushCapacitorPlugin {
      * @param queryError Optional callback invoked in case of an error.
      * @param deploymentKey Optional deployment key that overrides the config.xml setting.
      */
-    public checkForUpdate(querySuccess: SuccessCallback<IRemotePackage>, queryError?: ErrorCallback, deploymentKey?: string): void {
+    public checkForUpdate(
+        querySuccess: SuccessCallback<IRemotePackage>,
+        queryError?: ErrorCallback,
+        deploymentKey?: string
+    ): void {
         try {
-            var callback: Callback<RemotePackage | NativeUpdateNotification> = async (error: Error, remotePackageOrUpdateNotification: IRemotePackage | NativeUpdateNotification) => {
+            var callback: Callback<
+                RemotePackage | NativeUpdateNotification
+            > = async (
+                error: Error,
+                remotePackageOrUpdateNotification:
+                    | IRemotePackage
+                    | NativeUpdateNotification
+            ) => {
                 if (error) {
                     CodePushUtil.invokeErrorCallback(error, queryError);
-                }
-                else {
+                } else {
                     var appUpToDate = () => {
                         CodePushUtil.logMessage("App is up to date.");
                         querySuccess && querySuccess(null);
                     };
 
                     if (remotePackageOrUpdateNotification) {
-                        if ((<NativeUpdateNotification>remotePackageOrUpdateNotification).updateAppVersion) {
+                        if (
+                            (<NativeUpdateNotification>(
+                                remotePackageOrUpdateNotification
+                            )).updateAppVersion
+                        ) {
                             /* There is an update available for a different version. In the current version of the plugin, we treat that as no update. */
-                            CodePushUtil.logMessage("An update is available, but it is targeting a newer binary version than you are currently running.");
+                            CodePushUtil.logMessage(
+                                "An update is available, but it is targeting a newer binary version than you are currently running."
+                            );
                             appUpToDate();
                         } else {
                             /* There is an update available for the current version. */
-                            var remotePackage: RemotePackage = <RemotePackage>remotePackageOrUpdateNotification;
-                            const installFailed = await NativeAppInfo.isFailedUpdate(remotePackage.packageHash);
+                            var remotePackage: RemotePackage = <RemotePackage>(
+                                remotePackageOrUpdateNotification
+                            );
+                            const installFailed = await NativeAppInfo.isFailedUpdate(
+                                remotePackage.packageHash
+                            );
                             var result: RemotePackage = new RemotePackage();
                             result.appVersion = remotePackage.appVersion;
                             result.deploymentKey = deploymentKey; // server does not send back the deployment key
@@ -237,11 +326,13 @@ class CodePush implements CodePushCapacitorPlugin {
                             result.packageHash = remotePackage.packageHash;
                             result.packageSize = remotePackage.packageSize;
                             result.failedInstall = installFailed;
-                            CodePushUtil.logMessage("An update is available. " + JSON.stringify(result));
+                            CodePushUtil.logMessage(
+                                "An update is available. " +
+                                    JSON.stringify(result)
+                            );
                             querySuccess && querySuccess(result);
                         }
-                    }
-                    else {
+                    } else {
                         appUpToDate();
                     }
                 }
@@ -249,17 +340,25 @@ class CodePush implements CodePushCapacitorPlugin {
 
             var queryUpdate = async () => {
                 try {
-                    const acquisitionManager = await Sdk.getAcquisitionManager(deploymentKey);
-                    LocalPackage.getCurrentOrDefaultPackage().then(async (localPackage: LocalPackage) => {
-                        try {
-                            const currentBinaryVersion = await NativeAppInfo.getApplicationVersion();
-                            localPackage.appVersion = currentBinaryVersion;
-                        } catch (e) {}
-                        CodePushUtil.logMessage("Checking for update.");
-                        acquisitionManager.queryUpdateWithCurrentPackage(localPackage, callback);
-                    }, (error: Error) => {
-                        CodePushUtil.invokeErrorCallback(error, queryError);
-                    });
+                    const acquisitionManager = await Sdk.getAcquisitionManager(
+                        deploymentKey
+                    );
+                    LocalPackage.getCurrentOrDefaultPackage().then(
+                        async (localPackage: LocalPackage) => {
+                            try {
+                                const currentBinaryVersion = await NativeAppInfo.getApplicationVersion();
+                                localPackage.appVersion = currentBinaryVersion;
+                            } catch (e) {}
+                            CodePushUtil.logMessage("Checking for update.");
+                            acquisitionManager.queryUpdateWithCurrentPackage(
+                                localPackage,
+                                callback
+                            );
+                        },
+                        (error: Error) => {
+                            CodePushUtil.invokeErrorCallback(error, queryError);
+                        }
+                    );
                 } catch (e) {
                     CodePushUtil.invokeErrorCallback(e, queryError);
                 }
@@ -268,15 +367,27 @@ class CodePush implements CodePushCapacitorPlugin {
             if (deploymentKey) {
                 queryUpdate();
             } else {
-                NativeAppInfo.getDeploymentKey().then(defaultDeploymentKey => {
-                    deploymentKey = defaultDeploymentKey;
-                    queryUpdate();
-                }, deploymentKeyError => {
-                    CodePushUtil.invokeErrorCallback(deploymentKeyError, queryError);
-                });
+                NativeAppInfo.getDeploymentKey().then(
+                    (defaultDeploymentKey) => {
+                        deploymentKey = defaultDeploymentKey;
+                        queryUpdate();
+                    },
+                    (deploymentKeyError) => {
+                        CodePushUtil.invokeErrorCallback(
+                            deploymentKeyError,
+                            queryError
+                        );
+                    }
+                );
             }
         } catch (e) {
-            CodePushUtil.invokeErrorCallback(new Error("An error occurred while querying for updates." + CodePushUtil.getErrorMessage(e)), queryError);
+            CodePushUtil.invokeErrorCallback(
+                new Error(
+                    "An error occurred while querying for updates." +
+                        CodePushUtil.getErrorMessage(e)
+                ),
+                queryError
+            );
         }
     }
 
@@ -303,7 +414,10 @@ class CodePush implements CodePushCapacitorPlugin {
      * @param syncErrback Optional errback invoked if an error occurs. The callback will be called only once
      *
      */
-    public async sync(syncOptions?: SyncOptions, downloadProgress?: SuccessCallback<DownloadProgress>): Promise<any> {
+    public async sync(
+        syncOptions?: SyncOptions,
+        downloadProgress?: SuccessCallback<DownloadProgress>
+    ): Promise<any> {
         /* Check if a sync is already in progress */
         if (CodePush.SyncInProgress) {
             /* A sync is already in progress */
@@ -316,7 +430,10 @@ class CodePush implements CodePushCapacitorPlugin {
              * If the sync status is a result status, then the sync must be complete and the flag must be updated
              * Otherwise, do not change the flag and trigger the syncCallback as usual
              */
-            var syncCallbackAndUpdateSyncInProgress: Callback<any> = (err: Error, result: any): void => {
+            var syncCallbackAndUpdateSyncInProgress: Callback<any> = (
+                err: Error,
+                result: any
+            ): void => {
                 switch (result) {
                     case SyncStatus.ERROR:
                     case SyncStatus.IN_PROGRESS:
@@ -340,7 +457,11 @@ class CodePush implements CodePushCapacitorPlugin {
 
             /* Begin the sync */
             CodePush.SyncInProgress = true;
-            this.syncInternal(syncCallbackAndUpdateSyncInProgress, syncOptions, downloadProgress);
+            this.syncInternal(
+                syncCallbackAndUpdateSyncInProgress,
+                syncOptions,
+                downloadProgress
+            );
         });
     }
 
@@ -356,8 +477,11 @@ class CodePush implements CodePushCapacitorPlugin {
      * @param downloadProgress Optional callback invoked during the download process. It is called several times with one DownloadProgress parameter.
      *
      */
-    private syncInternal(syncCallback?: Callback<any>, syncOptions?: SyncOptions, downloadProgress?: SuccessCallback<DownloadProgress>): void {
-
+    private syncInternal(
+        syncCallback?: Callback<any>,
+        syncOptions?: SyncOptions,
+        downloadProgress?: SuccessCallback<DownloadProgress>
+    ): void {
         /* No options were specified, use default */
         if (!syncOptions) {
             syncOptions = this.getDefaultSyncOptions();
@@ -366,12 +490,15 @@ class CodePush implements CodePushCapacitorPlugin {
             /* Handle dialog options */
             var defaultDialogOptions = this.getDefaultUpdateDialogOptions();
             if (syncOptions.updateDialog) {
-                if (typeof syncOptions.updateDialog !== typeof ({})) {
+                if (typeof syncOptions.updateDialog !== typeof {}) {
                     /* updateDialog set to truey condition, use default options */
                     syncOptions.updateDialog = defaultDialogOptions;
                 } else {
                     /* some options were specified, merge with default */
-                    CodePushUtil.copyUnassignedMembers(defaultDialogOptions, syncOptions.updateDialog);
+                    CodePushUtil.copyUnassignedMembers(
+                        defaultDialogOptions,
+                        syncOptions.updateDialog
+                    );
                 }
             }
 
@@ -390,14 +517,20 @@ class CodePush implements CodePushCapacitorPlugin {
         var onInstallSuccess = (appliedWhen: InstallMode) => {
             switch (appliedWhen) {
                 case InstallMode.ON_NEXT_RESTART:
-                    CodePushUtil.logMessage("Update is installed and will be run on the next app restart.");
+                    CodePushUtil.logMessage(
+                        "Update is installed and will be run on the next app restart."
+                    );
                     break;
 
                 case InstallMode.ON_NEXT_RESUME:
                     if (syncOptions.minimumBackgroundDuration > 0) {
-                        CodePushUtil.logMessage(`Update is installed and will be run after the app has been in the background for at least ${syncOptions.minimumBackgroundDuration} seconds.`);
+                        CodePushUtil.logMessage(
+                            `Update is installed and will be run after the app has been in the background for at least ${syncOptions.minimumBackgroundDuration} seconds.`
+                        );
                     } else {
-                        CodePushUtil.logMessage("Update is installed and will be run when the app next resumes.");
+                        CodePushUtil.logMessage(
+                            "Update is installed and will be run when the app next resumes."
+                        );
                     }
 
                     break;
@@ -413,45 +546,62 @@ class CodePush implements CodePushCapacitorPlugin {
 
         var downloadAndInstallUpdate = (remotePackage: RemotePackage) => {
             syncCallback && syncCallback(null, SyncStatus.DOWNLOADING_PACKAGE);
-            remotePackage.download(downloadProgress).then(onDownloadSuccess, onError);
+            remotePackage
+                .download(downloadProgress)
+                .then(onDownloadSuccess, onError);
         };
 
         var onUpdate = async (remotePackage: RemotePackage) => {
-            var updateShouldBeIgnored = remotePackage && (remotePackage.failedInstall && syncOptions.ignoreFailedUpdates);
+            var updateShouldBeIgnored =
+                remotePackage &&
+                remotePackage.failedInstall &&
+                syncOptions.ignoreFailedUpdates;
             if (!remotePackage || updateShouldBeIgnored) {
                 if (updateShouldBeIgnored) {
-                    CodePushUtil.logMessage("An update is available, but it is being ignored due to have been previously rolled back.");
+                    CodePushUtil.logMessage(
+                        "An update is available, but it is being ignored due to have been previously rolled back."
+                    );
                 }
 
                 syncCallback && syncCallback(null, SyncStatus.UP_TO_DATE);
             } else {
-                var dlgOpts: UpdateDialogOptions = <UpdateDialogOptions>syncOptions.updateDialog;
+                var dlgOpts: UpdateDialogOptions = <UpdateDialogOptions>(
+                    syncOptions.updateDialog
+                );
                 if (dlgOpts) {
                     CodePushUtil.logMessage("Awaiting user action.");
-                    syncCallback && syncCallback(null, SyncStatus.AWAITING_USER_ACTION);
+                    syncCallback &&
+                        syncCallback(null, SyncStatus.AWAITING_USER_ACTION);
                 }
                 if (remotePackage.isMandatory && syncOptions.updateDialog) {
                     /* Alert user */
-                    var message = dlgOpts.appendReleaseDescription ?
-                        dlgOpts.mandatoryUpdateMessage + dlgOpts.descriptionPrefix + remotePackage.description
+                    var message = dlgOpts.appendReleaseDescription
+                        ? dlgOpts.mandatoryUpdateMessage +
+                          dlgOpts.descriptionPrefix +
+                          remotePackage.description
                         : dlgOpts.mandatoryUpdateMessage;
                     await Modals.alert({
                         message,
                         title: dlgOpts.updateTitle,
-                        buttonTitle: dlgOpts.mandatoryContinueButtonLabel
+                        buttonTitle: dlgOpts.mandatoryContinueButtonLabel,
                     });
                     downloadAndInstallUpdate(remotePackage);
-                } else if (!remotePackage.isMandatory && syncOptions.updateDialog) {
+                } else if (
+                    !remotePackage.isMandatory &&
+                    syncOptions.updateDialog
+                ) {
                     /* Confirm update with user */
-                    var message = dlgOpts.appendReleaseDescription ?
-                        dlgOpts.optionalUpdateMessage + dlgOpts.descriptionPrefix + remotePackage.description
+                    var message = dlgOpts.appendReleaseDescription
+                        ? dlgOpts.optionalUpdateMessage +
+                          dlgOpts.descriptionPrefix +
+                          remotePackage.description
                         : dlgOpts.optionalUpdateMessage;
 
                     const confirmResult = await Modals.confirm({
                         message,
                         title: dlgOpts.updateTitle,
                         okButtonTitle: dlgOpts.optionalInstallButtonLabel,
-                        cancelButtonTitle: dlgOpts.optionalIgnoreButtonLabel
+                        cancelButtonTitle: dlgOpts.optionalIgnoreButtonLabel,
                     });
 
                     if (confirmResult.value) {
@@ -460,7 +610,8 @@ class CodePush implements CodePushCapacitorPlugin {
                     } else {
                         /* Cancel */
                         CodePushUtil.logMessage("User cancelled the update.");
-                        syncCallback && syncCallback(null, SyncStatus.UPDATE_IGNORED);
+                        syncCallback &&
+                            syncCallback(null, SyncStatus.UPDATE_IGNORED);
                     }
                 } else {
                     /* No user interaction */
@@ -485,7 +636,7 @@ class CodePush implements CodePushCapacitorPlugin {
                 minimumBackgroundDuration: 0,
                 mandatoryInstallMode: InstallMode.IMMEDIATE,
                 updateDialog: false,
-                deploymentKey: undefined
+                deploymentKey: undefined,
             };
         }
 
@@ -500,13 +651,15 @@ class CodePush implements CodePushCapacitorPlugin {
         if (!CodePush.DefaultUpdateDialogOptions) {
             CodePush.DefaultUpdateDialogOptions = {
                 updateTitle: "Update available",
-                mandatoryUpdateMessage: "An update is available that must be installed.",
+                mandatoryUpdateMessage:
+                    "An update is available that must be installed.",
                 mandatoryContinueButtonLabel: "Continue",
-                optionalUpdateMessage: "An update is available. Would you like to install it?",
+                optionalUpdateMessage:
+                    "An update is available. Would you like to install it?",
                 optionalInstallButtonLabel: "Install",
                 optionalIgnoreButtonLabel: "Ignore",
                 appendReleaseDescription: false,
-                descriptionPrefix: " Description: "
+                descriptionPrefix: " Description: ",
             };
         }
 
@@ -521,9 +674,8 @@ class CodePush implements CodePushCapacitorPlugin {
 enum ReportStatus {
     STORE_VERSION = 0,
     UPDATE_CONFIRMED = 1,
-    UPDATE_ROLLED_BACK = 2
+    UPDATE_ROLLED_BACK = 2,
 }
-
 
 // TODO: continue from here; add NativeCodePush.addListener(...)
 var instance = new CodePush();

@@ -1,19 +1,22 @@
 import { Http } from "code-push/script/acquisition-sdk";
 import { Callback } from "./callbackUtil";
 
-
 /**
  * XMLHttpRequest-based implementation of Http.Requester.
  */
 export class HttpRequester implements Http.Requester {
-
     private contentType: string;
 
     constructor(contentType?: string) {
         this.contentType = contentType;
     }
 
-    public request(verb: Http.Verb, url: string, callbackOrRequestBody: Callback<Http.Response> | string, callback?: Callback<Http.Response>): void {
+    public request(
+        verb: Http.Verb,
+        url: string,
+        callbackOrRequestBody: Callback<Http.Response> | string,
+        callback?: Callback<Http.Response>
+    ): void {
         var requestBody: string;
         var requestCallback: Callback<Http.Response> = callback;
 
@@ -27,9 +30,12 @@ export class HttpRequester implements Http.Requester {
 
         var xhr = new XMLHttpRequest();
         var methodName = this.getHttpMethodName(verb);
-        xhr.onreadystatechange = function(): void {
+        xhr.onreadystatechange = function (): void {
             if (xhr.readyState === 4) {
-                var response: Http.Response = { statusCode: xhr.status, body: xhr.responseText };
+                var response: Http.Response = {
+                    statusCode: xhr.status,
+                    body: xhr.responseText,
+                };
                 requestCallback && requestCallback(null, response);
             }
         };
@@ -38,7 +44,10 @@ export class HttpRequester implements Http.Requester {
             xhr.setRequestHeader("Content-Type", this.contentType);
         }
 
-        xhr.setRequestHeader("X-CodePush-Plugin-Name", "capacitor-plugin-code-push");
+        xhr.setRequestHeader(
+            "X-CodePush-Plugin-Name",
+            "capacitor-plugin-code-push"
+        );
         xhr.setRequestHeader("X-CodePush-Plugin-Version", "1.11.13");
         xhr.setRequestHeader("X-CodePush-SDK-Version", "2.0.6");
         xhr.send(requestBody);

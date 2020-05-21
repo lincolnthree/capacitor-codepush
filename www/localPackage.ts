@@ -13,7 +13,6 @@ import { Sdk } from "./sdk";
 const NativeCodePush = Plugins.CodePush as NativeCodePushPlugin;
 const { Filesystem } = Plugins;
 
-
 /**
  * Defines the JSON format of the package diff manifest file.
  */
@@ -38,7 +37,8 @@ export class LocalPackage extends Package implements ILocalPackage {
     public static RootDir: string = "codepush";
 
     public static DownloadDir: string = LocalPackage.RootDir + "/download";
-    private static DownloadUnzipDir: string = LocalPackage.DownloadDir + "/unzipped";
+    private static DownloadUnzipDir: string =
+        LocalPackage.DownloadDir + "/unzipped";
     private static DeployDir: string = LocalPackage.RootDir + "/deploy";
     private static VersionsDir: string = LocalPackage.DeployDir + "/versions";
 
@@ -66,7 +66,9 @@ export class LocalPackage extends Package implements ILocalPackage {
      *
      * @param installOptions Optional parameter used for customizing the installation behavior.
      */
-    public async install(installOptions?: InstallOptions): Promise<InstallMode> {
+    public async install(
+        installOptions?: InstallOptions
+    ): Promise<InstallMode> {
         return new Promise<InstallMode>(async (resolve, reject) => {
             try {
                 CodePushUtil.logMessage("Installing update");
@@ -74,40 +76,71 @@ export class LocalPackage extends Package implements ILocalPackage {
                 if (!installOptions) {
                     installOptions = LocalPackage.getDefaultInstallOptions();
                 } else {
-                    CodePushUtil.copyUnassignedMembers(LocalPackage.getDefaultInstallOptions(), installOptions);
+                    CodePushUtil.copyUnassignedMembers(
+                        LocalPackage.getDefaultInstallOptions(),
+                        installOptions
+                    );
                 }
 
                 var installError: ErrorCallback = (error: Error): void => {
                     CodePushUtil.invokeErrorCallback(error, reject);
-                    Sdk.reportStatusDeploy(this, AcquisitionStatus.DeploymentFailed, this.deploymentKey);
+                    Sdk.reportStatusDeploy(
+                        this,
+                        AcquisitionStatus.DeploymentFailed,
+                        this.deploymentKey
+                    );
                 };
 
                 let unzipDir;
                 try {
-                    unzipDir = await FileUtil.cleanDataDirectory(LocalPackage.DownloadUnzipDir);
+                    unzipDir = await FileUtil.cleanDataDirectory(
+                        LocalPackage.DownloadUnzipDir
+                    );
                 } catch (error) {
                     installError(error);
                     return;
                 }
 
                 try {
-                    await NativeCodePush.unzip({zipFile: this.localPath, targetDirectory: unzipDir});
+                    await NativeCodePush.unzip({
+                        zipFile: this.localPath,
+                        targetDirectory: unzipDir,
+                    });
                 } catch (unzipError) {
-                    installError(new Error("Could not unzip package" + CodePushUtil.getErrorMessage(unzipError)));
+                    installError(
+                        new Error(
+                            "Could not unzip package" +
+                                CodePushUtil.getErrorMessage(unzipError)
+                        )
+                    );
                     return;
                 }
 
                 try {
-                    const newPackageLocation = LocalPackage.VersionsDir + "/" + this.packageHash;
-                    const deploymentResult = await LocalPackage.handleDeployment(newPackageLocation);
+                    const newPackageLocation =
+                        LocalPackage.VersionsDir + "/" + this.packageHash;
+                    const deploymentResult = await LocalPackage.handleDeployment(
+                        newPackageLocation
+                    );
                     await this.verifyPackage(deploymentResult);
                     this.localPath = deploymentResult.deployDir;
-                    this.finishInstall(deploymentResult.deployDir, installOptions, resolve, installError);
+                    this.finishInstall(
+                        deploymentResult.deployDir,
+                        installOptions,
+                        resolve,
+                        installError
+                    );
                 } catch (error) {
                     installError(error);
                 }
             } catch (e) {
-                installError && installError(new Error("An error occured while installing the package. " + CodePushUtil.getErrorMessage(e)));
+                installError &&
+                    installError(
+                        new Error(
+                            "An error occured while installing the package. " +
+                                CodePushUtil.getErrorMessage(e)
+                        )
+                    );
             }
         });
     }
@@ -120,47 +153,75 @@ export class LocalPackage extends Package implements ILocalPackage {
                 reject(error);
             };
 
-            var verify = (isSignatureVerificationEnabled: boolean, isSignatureAppearedInBundle: boolean, publicKey: string, signature: string) => {
+            var verify = (
+                isSignatureVerificationEnabled: boolean,
+                isSignatureAppearedInBundle: boolean,
+                publicKey: string,
+                signature: string
+            ) => {
                 if (isSignatureVerificationEnabled) {
                     if (isSignatureAppearedInBundle) {
-                        this.verifyHash(deployDir, this.packageHash, verificationFail, () => {
-                            this.verifySignature(deployDir, this.packageHash, publicKey, signature, verificationFail, resolve);
-                        });
+                        this.verifyHash(
+                            deployDir,
+                            this.packageHash,
+                            verificationFail,
+                            () => {
+                                this.verifySignature(
+                                    deployDir,
+                                    this.packageHash,
+                                    publicKey,
+                                    signature,
+                                    verificationFail,
+                                    resolve
+                                );
+                            }
+                        );
                     } else {
-                        var errorMessage = 
-                        "Error! Public key was provided but there is no JWT signature within app bundle to verify. " +
-                        "Possible reasons, why that might happen: \n" +
-                        "1. You've been released CodePush bundle update using version of CodePush CLI that is not support code signing.\n" +
-                        "2. You've been released CodePush bundle update without providing --privateKeyPath option.";
+                        var errorMessage =
+                            "Error! Public key was provided but there is no JWT signature within app bundle to verify. " +
+                            "Possible reasons, why that might happen: \n" +
+                            "1. You've been released CodePush bundle update using version of CodePush CLI that is not support code signing.\n" +
+                            "2. You've been released CodePush bundle update without providing --privateKeyPath option.";
                         reject(new Error(errorMessage));
                     }
                 } else {
                     if (isSignatureAppearedInBundle) {
                         CodePushUtil.logMessage(
                             "Warning! JWT signature exists in codepush update but code integrity check couldn't be performed because there is no public key configured. " +
-                            "Please ensure that public key is properly configured within your application."
+                                "Please ensure that public key is properly configured within your application."
                         );
 
                         // verifyHash
-                        this.verifyHash(deployDir, this.packageHash, verificationFail, resolve);
+                        this.verifyHash(
+                            deployDir,
+                            this.packageHash,
+                            verificationFail,
+                            resolve
+                        );
                     } else {
-                        if (deploymentResult.isDiffUpdate){
+                        if (deploymentResult.isDiffUpdate) {
                             // verifyHash
-                            this.verifyHash(deployDir, this.packageHash, verificationFail, resolve);
+                            this.verifyHash(
+                                deployDir,
+                                this.packageHash,
+                                verificationFail,
+                                resolve
+                            );
                         } else {
                             resolve();
                         }
-                    }          
+                    }
                 }
             };
 
-            if (deploymentResult.isDiffUpdate){
+            if (deploymentResult.isDiffUpdate) {
                 CodePushUtil.logMessage("Applying diff update");
             } else {
                 CodePushUtil.logMessage("Applying full update");
             }
 
-            var isSignatureVerificationEnabled: boolean, isSignatureAppearedInBundle: boolean;
+            var isSignatureVerificationEnabled: boolean,
+                isSignatureAppearedInBundle: boolean;
             var publicKey: string;
 
             this.getPublicKey((error, publicKeyResult) => {
@@ -170,24 +231,36 @@ export class LocalPackage extends Package implements ILocalPackage {
                 }
 
                 publicKey = publicKeyResult;
-                isSignatureVerificationEnabled = (publicKey !== null);
+                isSignatureVerificationEnabled = publicKey !== null;
 
-                this.getSignatureFromUpdate(deploymentResult.deployDir, (error, signature) => {
-                    if (error) {
-                        reject(new Error("Error reading signature from update. " + error));
-                        return;
+                this.getSignatureFromUpdate(
+                    deploymentResult.deployDir,
+                    (error, signature) => {
+                        if (error) {
+                            reject(
+                                new Error(
+                                    "Error reading signature from update. " +
+                                        error
+                                )
+                            );
+                            return;
+                        }
+
+                        isSignatureAppearedInBundle = signature !== null;
+
+                        verify(
+                            isSignatureVerificationEnabled,
+                            isSignatureAppearedInBundle,
+                            publicKey,
+                            signature
+                        );
                     }
-
-                    isSignatureAppearedInBundle = (signature !== null);
-
-                    verify(isSignatureVerificationEnabled, isSignatureAppearedInBundle, publicKey, signature);
-                });
+                );
             });
         });
     }
 
     private getPublicKey(callback: Callback<string>) {
-    
         var success = (publicKey: string) => {
             callback(null, publicKey);
         };
@@ -196,21 +269,29 @@ export class LocalPackage extends Package implements ILocalPackage {
             callback(error, null);
         };
 
-        NativeCodePush.getPublicKey().then(result => success(result.value || null), fail);
+        NativeCodePush.getPublicKey().then(
+            (result) => success(result.value || null),
+            fail
+        );
     }
 
-    private async getSignatureFromUpdate(deployDir: string, callback: Callback<string>){
-
+    private async getSignatureFromUpdate(
+        deployDir: string,
+        callback: Callback<string>
+    ) {
         const filePath = deployDir + "/www/.codepushrelease";
 
-        if (!await FileUtil.fileExists(FilesystemDirectory.Data, filePath)) {
+        if (!(await FileUtil.fileExists(FilesystemDirectory.Data, filePath))) {
             // signature absents in the bundle
             callback(null, null);
             return;
         }
 
         try {
-            const signature = await FileUtil.readFile(FilesystemDirectory.Data, filePath);
+            const signature = await FileUtil.readFile(
+                FilesystemDirectory.Data,
+                filePath
+            );
             callback(null, signature);
         } catch (error) {
             // error reading signature file from bundle
@@ -218,42 +299,85 @@ export class LocalPackage extends Package implements ILocalPackage {
         }
     }
 
-    private verifyHash(deployDir: string, newUpdateHash: string, errorCallback: ErrorCallback, successCallback: SuccessCallback<void>){
+    private verifyHash(
+        deployDir: string,
+        newUpdateHash: string,
+        errorCallback: ErrorCallback,
+        successCallback: SuccessCallback<void>
+    ) {
         var packageHashSuccess = (computedHash: string) => {
             if (computedHash !== newUpdateHash) {
-                errorCallback(new Error("The update contents failed the data integrity check."));
+                errorCallback(
+                    new Error(
+                        "The update contents failed the data integrity check."
+                    )
+                );
                 return;
             }
 
-            CodePushUtil.logMessage("The update contents succeeded the data integrity check.");
+            CodePushUtil.logMessage(
+                "The update contents succeeded the data integrity check."
+            );
             successCallback();
         };
         var packageHashFail = (error: Error) => {
-            errorCallback(new Error("Unable to compute hash for package: " + error));
+            errorCallback(
+                new Error("Unable to compute hash for package: " + error)
+            );
         };
         CodePushUtil.logMessage("Verifying hash for folder path: " + deployDir);
-        NativeCodePush.getPackageHash({path: deployDir}).then(result => packageHashSuccess(result.value), packageHashFail);
+        NativeCodePush.getPackageHash({ path: deployDir }).then(
+            (result) => packageHashSuccess(result.value),
+            packageHashFail
+        );
     }
 
-    private verifySignature(deployDir: string, newUpdateHash: string, publicKey: string, signature: string, errorCallback: ErrorCallback, successCallback: SuccessCallback<void>){
+    private verifySignature(
+        deployDir: string,
+        newUpdateHash: string,
+        publicKey: string,
+        signature: string,
+        errorCallback: ErrorCallback,
+        successCallback: SuccessCallback<void>
+    ) {
         var decodeSignatureSuccess = (contentHash: string) => {
             if (contentHash !== newUpdateHash) {
-                errorCallback(new Error("The update contents failed the code signing check."));
+                errorCallback(
+                    new Error(
+                        "The update contents failed the code signing check."
+                    )
+                );
                 return;
             }
 
-            CodePushUtil.logMessage("The update contents succeeded the code signing check.");
+            CodePushUtil.logMessage(
+                "The update contents succeeded the code signing check."
+            );
             successCallback();
         };
         var decodeSignatureFail = (error: Error) => {
-            errorCallback(new Error("Unable to verify signature for package: " + error));
+            errorCallback(
+                new Error("Unable to verify signature for package: " + error)
+            );
         };
-        CodePushUtil.logMessage("Verifying signature for folder path: " + deployDir);
-        NativeCodePush.decodeSignature({publicKey, signature}).then(result => decodeSignatureSuccess(result.value), decodeSignatureFail);
-    }    
+        CodePushUtil.logMessage(
+            "Verifying signature for folder path: " + deployDir
+        );
+        NativeCodePush.decodeSignature({ publicKey, signature }).then(
+            (result) => decodeSignatureSuccess(result.value),
+            decodeSignatureFail
+        );
+    }
 
-    private finishInstall(deployDir: string, installOptions: InstallOptions, installSuccess: SuccessCallback<InstallMode>, installError: ErrorCallback): void {
-        async function backupPackageInformationFileIfNeeded(backupIfNeededDone: Callback<void>) {
+    private finishInstall(
+        deployDir: string,
+        installOptions: InstallOptions,
+        installSuccess: SuccessCallback<InstallMode>,
+        installError: ErrorCallback
+    ): void {
+        async function backupPackageInformationFileIfNeeded(
+            backupIfNeededDone: Callback<void>
+        ) {
             const pendingUpdate = await NativeAppInfo.isPendingUpdate();
             if (pendingUpdate) {
                 // Don't back up the  currently installed update since it hasn't been "confirmed"
@@ -268,72 +392,129 @@ export class LocalPackage extends Package implements ILocalPackage {
             }
         }
 
-        LocalPackage.getCurrentOrDefaultPackage().then((oldPackage: LocalPackage) => {
-            backupPackageInformationFileIfNeeded((backupError: Error) => {
-                /* continue on error, current package information is missing if this is the first update */
-                this.writeNewPackageMetadata().then(() => {
-                    var invokeSuccessAndInstall = () => {
-                        CodePushUtil.logMessage("Install succeeded.");
-                        var installModeToUse: InstallMode = this.isMandatory ? installOptions.mandatoryInstallMode : installOptions.installMode;
-                        if (installModeToUse === InstallMode.IMMEDIATE) {
-                            /* invoke success before navigating */
-                            installSuccess && installSuccess(installModeToUse);
-                            /* no need for callbacks, the javascript context will reload */
-                            NativeCodePush.install({
+        LocalPackage.getCurrentOrDefaultPackage().then(
+            (oldPackage: LocalPackage) => {
+                backupPackageInformationFileIfNeeded((backupError: Error) => {
+                    /* continue on error, current package information is missing if this is the first update */
+                    this.writeNewPackageMetadata().then(
+                        () => {
+                            var invokeSuccessAndInstall = () => {
+                                CodePushUtil.logMessage("Install succeeded.");
+                                var installModeToUse: InstallMode = this
+                                    .isMandatory
+                                    ? installOptions.mandatoryInstallMode
+                                    : installOptions.installMode;
+                                if (
+                                    installModeToUse === InstallMode.IMMEDIATE
+                                ) {
+                                    /* invoke success before navigating */
+                                    installSuccess &&
+                                        installSuccess(installModeToUse);
+                                    /* no need for callbacks, the javascript context will reload */
+                                    NativeCodePush.install({
+                                        startLocation: deployDir,
+                                        installMode: installModeToUse,
+                                        minimumBackgroundDuration:
+                                            installOptions.minimumBackgroundDuration,
+                                    });
+                                } else {
+                                    NativeCodePush.install({
+                                        startLocation: deployDir,
+                                        installMode: installModeToUse,
+                                        minimumBackgroundDuration:
+                                            installOptions.minimumBackgroundDuration,
+                                    }).then(
+                                        () => {
+                                            installSuccess &&
+                                                installSuccess(
+                                                    installModeToUse
+                                                );
+                                        },
+                                        () => {
+                                            installError && installError();
+                                        }
+                                    );
+                                }
+                            };
+
+                            var preInstallSuccess = () => {
+                                /* package will be cleaned up after success, on the native side */
+                                invokeSuccessAndInstall();
+                            };
+
+                            var preInstallFailure = (preInstallError?: any) => {
+                                CodePushUtil.logError(
+                                    "Preinstall failure.",
+                                    preInstallError
+                                );
+                                var error = new Error(
+                                    "An error has occured while installing the package. " +
+                                        CodePushUtil.getErrorMessage(
+                                            preInstallError
+                                        )
+                                );
+                                installError && installError(error);
+                            };
+
+                            NativeCodePush.preInstall({
                                 startLocation: deployDir,
-                                installMode: installModeToUse,
-                                minimumBackgroundDuration: installOptions.minimumBackgroundDuration
-                            });
-                        } else {
-                            NativeCodePush.install({
-                                startLocation: deployDir,
-                                installMode: installModeToUse,
-                                minimumBackgroundDuration: installOptions.minimumBackgroundDuration
-                            }).then(() => { installSuccess && installSuccess(installModeToUse); }, () => { installError && installError(); });
+                            }).then(preInstallSuccess, preInstallFailure);
+                        },
+                        (writeMetadataError: Error) => {
+                            installError && installError(writeMetadataError);
                         }
-                    };
-
-                    var preInstallSuccess = () => {
-                        /* package will be cleaned up after success, on the native side */
-                        invokeSuccessAndInstall();
-                    };
-
-                    var preInstallFailure = (preInstallError?: any) => {
-                        CodePushUtil.logError("Preinstall failure.", preInstallError);
-                        var error = new Error("An error has occured while installing the package. " + CodePushUtil.getErrorMessage(preInstallError));
-                        installError && installError(error);
-                    };
-
-                    NativeCodePush.preInstall({startLocation: deployDir}).then(preInstallSuccess, preInstallFailure);
-                }, (writeMetadataError: Error) => {
-                    installError && installError(writeMetadataError);
+                    );
                 });
-            });
-        }, installError);
+            },
+            installError
+        );
     }
 
-    private static async handleDeployment(newPackageLocation: string): Promise<DeploymentResult> {
+    private static async handleDeployment(
+        newPackageLocation: string
+    ): Promise<DeploymentResult> {
         const manifestFile: GetUriOptions = {
             directory: FilesystemDirectory.Data,
-            path: LocalPackage.DownloadUnzipDir + "/" + LocalPackage.DiffManifestFile
+            path:
+                LocalPackage.DownloadUnzipDir +
+                "/" +
+                LocalPackage.DiffManifestFile,
         };
-        const isDiffUpdate = await FileUtil.fileExists(manifestFile.directory, manifestFile.path);
+        const isDiffUpdate = await FileUtil.fileExists(
+            manifestFile.directory,
+            manifestFile.path
+        );
 
-        await Filesystem.mkdir({path: LocalPackage.VersionsDir, directory: FilesystemDirectory.Data, recursive: true});
-        await isDiffUpdate
-                ? LocalPackage.handleDiffDeployment(newPackageLocation, manifestFile)
-                : LocalPackage.handleCleanDeployment(newPackageLocation);
+        await Filesystem.mkdir({
+            path: LocalPackage.VersionsDir,
+            directory: FilesystemDirectory.Data,
+            recursive: true,
+        });
+        (await isDiffUpdate)
+            ? LocalPackage.handleDiffDeployment(
+                  newPackageLocation,
+                  manifestFile
+              )
+            : LocalPackage.handleCleanDeployment(newPackageLocation);
 
-        return {deployDir: newPackageLocation, isDiffUpdate};
+        return { deployDir: newPackageLocation, isDiffUpdate };
     }
 
     private async writeNewPackageMetadata(): Promise<void> {
-        const timestamp = await NativeAppInfo.getApplicationBuildTime().catch(buildTimeError => {
-            CodePushUtil.logError("Could not get application build time. " + buildTimeError);
-        });
-        const appVersion = await NativeAppInfo.getApplicationVersion().catch(appVersionError => {
-            CodePushUtil.logError("Could not get application version." + appVersionError);
-        });
+        const timestamp = await NativeAppInfo.getApplicationBuildTime().catch(
+            (buildTimeError) => {
+                CodePushUtil.logError(
+                    "Could not get application build time. " + buildTimeError
+                );
+            }
+        );
+        const appVersion = await NativeAppInfo.getApplicationVersion().catch(
+            (appVersionError) => {
+                CodePushUtil.logError(
+                    "Could not get application version." + appVersionError
+                );
+            }
+        );
 
         const currentPackageMetadata: IPackageInfoMetadata = {
             nativeBuildTime: timestamp as string,
@@ -347,60 +528,106 @@ export class LocalPackage extends Package implements ILocalPackage {
             packageHash: this.packageHash,
             isFirstRun: false,
             failedInstall: false,
-            install: undefined
+            install: undefined,
         };
 
         return new Promise<void>((resolve, reject) => {
-            LocalPackage.writeCurrentPackageInformation(currentPackageMetadata, error => error ? reject(error) : resolve());
+            LocalPackage.writeCurrentPackageInformation(
+                currentPackageMetadata,
+                (error) => (error ? reject(error) : resolve())
+            );
         });
     }
 
-    private static async handleCleanDeployment(newPackageLocation: string): Promise<void> {
+    private static async handleCleanDeployment(
+        newPackageLocation: string
+    ): Promise<void> {
         // no diff manifest
-        const source: GetUriOptions = {directory: FilesystemDirectory.Data, path: LocalPackage.DownloadUnzipDir};
-        const target: GetUriOptions = {directory: FilesystemDirectory.Data, path: newPackageLocation};
+        const source: GetUriOptions = {
+            directory: FilesystemDirectory.Data,
+            path: LocalPackage.DownloadUnzipDir,
+        };
+        const target: GetUriOptions = {
+            directory: FilesystemDirectory.Data,
+            path: newPackageLocation,
+        };
         // TODO: create destination directory if it doesn't exist
         return FileUtil.copyDirectoryEntriesTo(source, target);
     }
 
-    private static async copyCurrentPackage(newPackageLocation: string, ignoreList: string[]): Promise<void> {
-        const currentPackagePath = await new Promise<string>(resolve => {
-            LocalPackage.getPackage(LocalPackage.PackageInfoFile, (currentPackage: LocalPackage) => resolve(currentPackage.localPath), () => resolve());
+    private static async copyCurrentPackage(
+        newPackageLocation: string,
+        ignoreList: string[]
+    ): Promise<void> {
+        const currentPackagePath = await new Promise<string>((resolve) => {
+            LocalPackage.getPackage(
+                LocalPackage.PackageInfoFile,
+                (currentPackage: LocalPackage) =>
+                    resolve(currentPackage.localPath),
+                () => resolve()
+            );
         });
 
-        newPackageLocation = currentPackagePath ? newPackageLocation : newPackageLocation + "/www";
+        newPackageLocation = currentPackagePath
+            ? newPackageLocation
+            : newPackageLocation + "/www";
 
         // TODO: Investigate if this works as expected on iOS due to:
         // https://github.com/ionic-team/capacitor/issues/2312
-        const source: GetUriOptions = {directory: FilesystemDirectory.Data, path: currentPackagePath || "www"};
-        const target: GetUriOptions = {directory: FilesystemDirectory.Data, path: newPackageLocation};
+        const source: GetUriOptions = {
+            directory: FilesystemDirectory.Data,
+            path: currentPackagePath || "www",
+        };
+        const target: GetUriOptions = {
+            directory: FilesystemDirectory.Data,
+            path: newPackageLocation,
+        };
 
         return FileUtil.copyDirectoryEntriesTo(source, target, ignoreList);
     }
 
-    private static async handleDiffDeployment(newPackageLocation: string, diffManifest: GetUriOptions): Promise<void> {
+    private static async handleDiffDeployment(
+        newPackageLocation: string,
+        diffManifest: GetUriOptions
+    ): Promise<void> {
         let manifest: IDiffManifest = null;
         try {
-            await LocalPackage.copyCurrentPackage(newPackageLocation, [".codepushrelease"]);
+            await LocalPackage.copyCurrentPackage(newPackageLocation, [
+                ".codepushrelease",
+            ]);
             await LocalPackage.handleCleanDeployment(newPackageLocation);
 
             /* delete files mentioned in the manifest */
-            const content = await FileUtil.readFile(diffManifest.directory, diffManifest.path);
+            const content = await FileUtil.readFile(
+                diffManifest.directory,
+                diffManifest.path
+            );
             manifest = JSON.parse(content);
-            await FileUtil.deleteEntriesFromDataDirectory(newPackageLocation, manifest.deletedFiles);
+            await FileUtil.deleteEntriesFromDataDirectory(
+                newPackageLocation,
+                manifest.deletedFiles
+            );
         } catch (error) {
             throw new Error("Cannot perform diff-update.");
         }
     }
 
     /**
-    * Writes the given local package information to the current package information file.
-    * @param packageInfoMetadata The object to serialize.
-    * @param callback In case of an error, this function will be called with the error as the fist parameter.
-    */
-    public static writeCurrentPackageInformation(packageInfoMetadata: IPackageInfoMetadata, callback: Callback<void>): void {
+     * Writes the given local package information to the current package information file.
+     * @param packageInfoMetadata The object to serialize.
+     * @param callback In case of an error, this function will be called with the error as the fist parameter.
+     */
+    public static writeCurrentPackageInformation(
+        packageInfoMetadata: IPackageInfoMetadata,
+        callback: Callback<void>
+    ): void {
         var content = JSON.stringify(packageInfoMetadata);
-        FileUtil.writeStringToDataFile(content, LocalPackage.RootDir + "/" + LocalPackage.PackageInfoFile, true, callback);
+        FileUtil.writeStringToDataFile(
+            content,
+            LocalPackage.RootDir + "/" + LocalPackage.PackageInfoFile,
+            true,
+            callback
+        );
     }
 
     /**
@@ -411,12 +638,12 @@ export class LocalPackage extends Package implements ILocalPackage {
     public static async backupPackageInformationFile(): Promise<void> {
         const source: GetUriOptions = {
             directory: FilesystemDirectory.Data,
-            path: LocalPackage.RootDir + "/" + LocalPackage.PackageInfoFile
+            path: LocalPackage.RootDir + "/" + LocalPackage.PackageInfoFile,
         };
 
         const destination: GetUriOptions = {
             directory: FilesystemDirectory.Data,
-            path: LocalPackage.RootDir + "/" + LocalPackage.OldPackageInfoFile
+            path: LocalPackage.RootDir + "/" + LocalPackage.OldPackageInfoFile,
         };
 
         return FileUtil.copy(source, destination);
@@ -428,8 +655,15 @@ export class LocalPackage extends Package implements ILocalPackage {
      * @param packageSuccess Callback invoked with the old package information.
      * @param packageError Optional callback invoked in case of an error.
      */
-    public static getOldPackage(packageSuccess: SuccessCallback<LocalPackage>, packageError?: ErrorCallback): void {
-        LocalPackage.getPackage(LocalPackage.OldPackageInfoFile, packageSuccess, packageError);
+    public static getOldPackage(
+        packageSuccess: SuccessCallback<LocalPackage>,
+        packageError?: ErrorCallback
+    ): void {
+        LocalPackage.getPackage(
+            LocalPackage.OldPackageInfoFile,
+            packageSuccess,
+            packageError
+        );
     }
 
     /**
@@ -439,26 +673,45 @@ export class LocalPackage extends Package implements ILocalPackage {
      * @param packageSuccess Callback invoked with the package information.
      * @param packageError Optional callback invoked in case of an error.
      */
-    public static async getPackage(packageFile: string, packageSuccess: SuccessCallback<LocalPackage>, packageError?: ErrorCallback): Promise<void> {
+    public static async getPackage(
+        packageFile: string,
+        packageSuccess: SuccessCallback<LocalPackage>,
+        packageError?: ErrorCallback
+    ): Promise<void> {
         var handleError = (e: Error) => {
-            packageError && packageError(new Error("Cannot read package information. " + CodePushUtil.getErrorMessage(e)));
+            packageError &&
+                packageError(
+                    new Error(
+                        "Cannot read package information. " +
+                            CodePushUtil.getErrorMessage(e)
+                    )
+                );
         };
 
         try {
-            const content = await FileUtil.readDataFile(LocalPackage.RootDir + "/" + packageFile);
+            const content = await FileUtil.readDataFile(
+                LocalPackage.RootDir + "/" + packageFile
+            );
             const packageInfo: IPackageInfoMetadata = JSON.parse(content);
-            LocalPackage.getLocalPackageFromMetadata(packageInfo).then(packageSuccess, packageError);
+            LocalPackage.getLocalPackageFromMetadata(packageInfo).then(
+                packageSuccess,
+                packageError
+            );
         } catch (e) {
             handleError(e);
         }
     }
 
-    private static async getLocalPackageFromMetadata(metadata: IPackageInfoMetadata): Promise<LocalPackage> {
+    private static async getLocalPackageFromMetadata(
+        metadata: IPackageInfoMetadata
+    ): Promise<LocalPackage> {
         if (!metadata) {
             throw new Error("Invalid package metadata.");
         }
 
-        const installFailed = await NativeAppInfo.isFailedUpdate(metadata.packageHash);
+        const installFailed = await NativeAppInfo.isFailedUpdate(
+            metadata.packageHash
+        );
         const isFirstRun = await NativeAppInfo.isFirstRun(metadata.packageHash);
         const localPackage = new LocalPackage();
 
@@ -476,14 +729,20 @@ export class LocalPackage extends Package implements ILocalPackage {
     }
 
     public static getCurrentOrDefaultPackage(): Promise<LocalPackage> {
-        return LocalPackage.getPackageInfoOrDefault(LocalPackage.PackageInfoFile);
+        return LocalPackage.getPackageInfoOrDefault(
+            LocalPackage.PackageInfoFile
+        );
     }
 
     public static async getOldOrDefaultPackage(): Promise<LocalPackage> {
-        return LocalPackage.getPackageInfoOrDefault(LocalPackage.OldPackageInfoFile);
+        return LocalPackage.getPackageInfoOrDefault(
+            LocalPackage.OldPackageInfoFile
+        );
     }
 
-    public static async getPackageInfoOrDefault(packageFile: string): Promise<LocalPackage> {
+    public static async getPackageInfoOrDefault(
+        packageFile: string
+    ): Promise<LocalPackage> {
         return new Promise<LocalPackage>((resolve, reject) => {
             const packageFailure = async () => {
                 /**
@@ -494,7 +753,9 @@ export class LocalPackage extends Package implements ILocalPackage {
                 try {
                     appVersion = await NativeAppInfo.getApplicationVersion();
                 } catch (appVersionError) {
-                    CodePushUtil.logError("Could not get application version." + appVersionError);
+                    CodePushUtil.logError(
+                        "Could not get application version." + appVersionError
+                    );
                     reject(appVersionError);
                     return;
                 }
@@ -504,18 +765,32 @@ export class LocalPackage extends Package implements ILocalPackage {
                 try {
                     defaultPackage.packageHash = await NativeAppInfo.getBinaryHash();
                 } catch (binaryHashError) {
-                    CodePushUtil.logError("Could not get binary hash." + binaryHashError);
+                    CodePushUtil.logError(
+                        "Could not get binary hash." + binaryHashError
+                    );
                 }
 
                 resolve(defaultPackage);
             };
 
-            LocalPackage.getPackage(packageFile, resolve as any, packageFailure);
+            LocalPackage.getPackage(
+                packageFile,
+                resolve as any,
+                packageFailure
+            );
         });
     }
 
-    public static getPackageInfoOrNull(packageFile: string, packageSuccess: SuccessCallback<LocalPackage>, packageError?: ErrorCallback): void {
-        LocalPackage.getPackage(packageFile, packageSuccess, packageSuccess.bind(null, null));
+    public static getPackageInfoOrNull(
+        packageFile: string,
+        packageSuccess: SuccessCallback<LocalPackage>,
+        packageError?: ErrorCallback
+    ): void {
+        LocalPackage.getPackage(
+            packageFile,
+            packageSuccess,
+            packageSuccess.bind(null, null)
+        );
     }
 
     /**
@@ -527,7 +802,7 @@ export class LocalPackage extends Package implements ILocalPackage {
             LocalPackage.DefaultInstallOptions = {
                 installMode: InstallMode.ON_NEXT_RESTART,
                 minimumBackgroundDuration: 0,
-                mandatoryInstallMode: InstallMode.IMMEDIATE
+                mandatoryInstallMode: InstallMode.IMMEDIATE,
             };
         }
 

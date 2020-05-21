@@ -1,7 +1,15 @@
 import { Callback } from "./callbackUtil";
 
 export const enum Verb {
-    GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH
+    GET,
+    HEAD,
+    POST,
+    PUT,
+    DELETE,
+    TRACE,
+    OPTIONS,
+    CONNECT,
+    PATCH,
 }
 
 export interface Response {
@@ -11,5 +19,10 @@ export interface Response {
 
 export interface Requester {
     request(verb: Verb, url: string, callback: Callback<Response>): void;
-    request(verb: Verb, url: string, requestBody: string, callback: Callback<Response>): void;
+    request(
+        verb: Verb,
+        url: string,
+        requestBody: string,
+        callback: Callback<Response>
+    ): void;
 }
